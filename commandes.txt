@@ -1,0 +1,28 @@
+// générerez un network bridgé nommé MyBridgedNetwork avec pour plage ip 172.1.1.0/24
+docker network create -d bridge --subnet=172.1.1.0/24 MyBridgedNetwork
+
+// Deploiement d'un conteneur Nginx sur MyBridgedNetwork
+docker run -d -it --network MyBridgedNetwork --name web nginx:mainline-alpine
+
+// Déploiement d'un conteneur mongo pour notre bdd sur MyBridgedNetwork
+docker run -d -it --network MyBridgedNetwork --name db mongo:4.2.2
+
+// Création d'un volume “bdd” 
+sudo docker volume create bdd
+
+// rattachement du volume “bdd” au conteneur mongo
+docker run -d --network MyBridgedNetwork --name bdd mongo --mount source=bdd,destination=/bdd
+
+// Création d'un second network nommé BCNetwork 172.2.2.0/24
+docker network create -d bridge --subnet=172.2.2.0/24 BCNetwork
+
+
+// Création d'un volume blockchain
+docker volume create blockchain
+
+// build and run ethereum node
+docker build -t geth ./geth
+docker run -d -it --network BCNetwork --mount source=blockchain,destination=/blockchain --name geth geth
+
+// run docker compose
+docker-compose up -d --build
